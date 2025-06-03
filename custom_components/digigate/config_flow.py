@@ -13,6 +13,7 @@ class DigiGateConfigFlow(config_entries.ConfigFlow, domain="digigate"):
             data_schema=vol.Schema({
                 vol.Required("ip"): str,
                 vol.Required("api_code"): str,
-                vol.Optional("duration", default=DEFAULT_DURATION): vol.All(int, vol.Range(min=1)),
+                vol.Required("open_mode", default="latch"): vol.In(["latch", "timed"]),
+                vol.Optional("duration", default=DEFAULT_DURATION): vol.All(int, vol.Range(min=1))
             })
         )
