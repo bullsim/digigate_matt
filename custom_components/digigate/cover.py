@@ -1,5 +1,4 @@
-from homeassistant.components.cover import CoverEntity
-from homeassistant.const import STATE_OPEN, STATE_CLOSED
+from homeassistant.components.cover import CoverEntity, CoverEntityFeature
 import aiohttp
 
 async def async_setup_entry(hass, entry, async_add_entities):
@@ -8,10 +7,9 @@ async def async_setup_entry(hass, entry, async_add_entities):
 class DigiGateCover(CoverEntity):
     def __init__(self, entry):
         self._name = "DigiGate"
-        self._state = STATE_CLOSED
         self.api_code = entry.data["api_code"]
         self.ip = entry.data["ip"]
-        self.mode = entry.data.get("mode", "latch")
+        self.duration = entry.data.get("duration", 15)  # Default to 15 seconds
 
     @property
     def name(self):
@@ -19,19 +17,18 @@ class DigiGateCover(CoverEntity):
 
     @property
     def is_closed(self):
-        return self._state == STATE_CLOSED
+        return None  # State unknown → both buttons stay active
+
+    @property
+    def supported_features(self):
+        return CoverEntityFeature.OPEN | CoverEntityFeature.CLOSE
 
     async def async_open_cover(self, **kwargs):
-        if self.mode == "timed":
-            await self._send_command("open", duration="300")
-        else:
-            await self._send_command("latch", duration="0")
-        self._state = STATE_OPEN
+        await self._send_command("latch", duration=str(self.duration))
         self.async_write_ha_state()
 
     async def async_close_cover(self, **kwargs):
         await self._send_command("close")
-        self._state = STATE_CLOSED
         self.async_write_ha_state()
 
     async def _send_command(self, request, duration=None):
