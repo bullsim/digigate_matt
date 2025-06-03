@@ -1,6 +1,8 @@
 from homeassistant import config_entries
 import voluptuous as vol
 
+DEFAULT_DURATION = 15
+
 class DigiGateConfigFlow(config_entries.ConfigFlow, domain="digigate"):
     async def async_step_user(self, user_input=None):
         if user_input is not None:
@@ -11,6 +13,7 @@ class DigiGateConfigFlow(config_entries.ConfigFlow, domain="digigate"):
             data_schema=vol.Schema({
                 vol.Required("ip"): str,
                 vol.Required("api_code"): str,
-                vol.Optional("mode", default="latch"): vol.In(["latch", "timed"])
-            })
+                vol.Optional("duration", default=DEFAULT_DURATION): vol.All(int, vol.Range(min=1))
+            }),
+            description="Enter your DigiGate details. Duration is in seconds (e.g. 15 seconds or 180 seconds if you want 3 minutes)."
         )
