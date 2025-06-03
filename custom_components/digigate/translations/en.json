@@ -1,0 +1,15 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "DigiGate Setup",
+        "description": "Enter your DigiGate IP, API code, and open mode",
+        "data": {
+          "ip": "IP Address",
+          "api_code": "API Code",
+          "mode": "Open Mode"
+        }
+      }
+    }
+  }
+}
