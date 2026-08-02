@@ -1,7 +1,7 @@
 {
   "domain": "digigate",
   "name": "DigiGate",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "documentation": "https://github.com/mconstable/digigate_matt",
   "requirements": [],
   "codeowners": [
