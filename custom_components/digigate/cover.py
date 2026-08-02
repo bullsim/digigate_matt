@@ -24,7 +24,11 @@ def _build_url(host: str) -> str:
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    async_add_entities([DigiGateCover(hass, entry)], update_before_add=True)
+    cover = DigiGateCover(hass, entry)
+    # Share the instance so the lock-open switch and the online sensor can
+    # reuse its HTTP client rather than duplicating the request logic.
+    hass.data.setdefault(DOMAIN, {}).setdefault(entry.entry_id, {})["cover"] = cover
+    async_add_entities([cover], update_before_add=True)
 
 
 class DigiGateCover(CoverEntity):
@@ -65,7 +69,7 @@ class DigiGateCover(CoverEntity):
         It returns {"status": "closed"|"open", "time_left": "<seconds>"}, which
         is enough for real state rather than a write-only button.
         """
-        data = await self._send_command("status")
+        data = await self.send_command("status")
         if not data:
             return
         status = data.get("status")
@@ -87,20 +91,20 @@ class DigiGateCover(CoverEntity):
         """
         hold = self._hold_minutes
         if hold is not None:
-            await self._send_command("open", duration=str(int(hold)))
+            await self.send_command("open", duration=str(int(hold)))
         elif self.open_mode == "timed":
-            await self._send_command("open", duration=str(self.duration))
+            await self.send_command("open", duration=str(self.duration))
         else:
-            await self._send_command("latch", duration="0")
+            await self.send_command("latch", duration="0")
         await self.async_update()
         self.async_write_ha_state()
 
     async def async_close_cover(self, **kwargs):
-        await self._send_command("close")
+        await self.send_command("close")
         await self.async_update()
         self.async_write_ha_state()
 
-    async def _send_command(self, request, duration=None):
+    async def send_command(self, request, duration=None):
         payload = {"apiCode": self.api_code, "request": request}
         if duration is not None:
             payload["duration"] = duration

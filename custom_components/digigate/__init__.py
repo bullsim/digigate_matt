@@ -1,5 +1,5 @@
 DOMAIN = "digigate"
-PLATFORMS = ["cover", "number"]
+PLATFORMS = ["cover", "number", "switch", "binary_sensor"]
 
 
 async def async_setup_entry(hass, entry):
