@@ -4,6 +4,8 @@ import aiohttp
 
 from homeassistant.components.cover import CoverEntity, CoverEntityFeature
 
+from . import DOMAIN
+
 _LOGGER = logging.getLogger(__name__)
 
 
@@ -22,13 +24,15 @@ def _build_url(host: str) -> str:
 
 
 async def async_setup_entry(hass, entry, async_add_entities):
-    async_add_entities([DigiGateCover(entry)], update_before_add=True)
+    async_add_entities([DigiGateCover(hass, entry)], update_before_add=True)
 
 
 class DigiGateCover(CoverEntity):
     _attr_should_poll = True
 
-    def __init__(self, entry):
+    def __init__(self, hass, entry):
+        self.hass = hass
+        self._entry_id = entry.entry_id
         self._attr_name = "DigiGate"
         self._attr_unique_id = f"digigate_{entry.data['ip'].replace('.', '_')}"
         self.api_code = entry.data["api_code"]
@@ -69,8 +73,22 @@ class DigiGateCover(CoverEntity):
             self._is_closed = status == "closed"
         self._time_left = data.get("time_left")
 
+    @property
+    def _hold_minutes(self):
+        """Value of the DigiGate hold number entity, if it exists."""
+        store = self.hass.data.get(DOMAIN, {}).get(self._entry_id, {})
+        return store.get("hold_minutes")
+
     async def async_open_cover(self, **kwargs):
-        if self.open_mode == "timed":
+        """Open, holding for the configured time before the gate closes itself.
+
+        The hold number entity wins when present, so the duration can be changed
+        from the dashboard rather than in the integration options.
+        """
+        hold = self._hold_minutes
+        if hold is not None:
+            await self._send_command("open", duration=str(int(hold)))
+        elif self.open_mode == "timed":
             await self._send_command("open", duration=str(self.duration))
         else:
             await self._send_command("latch", duration="0")
